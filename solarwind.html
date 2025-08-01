@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Wind Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .dashboard {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-selector {
+            display: flex;
+            gap: 0;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-button {
+            background: #444;
+            color: #ccc;
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 0;
+            border-right: 1px solid #555;
+            transition: background 0.2s;
+        }
+
+        .dashboard-button:first-of-type {
+            border-radius: 4px 0 0 4px;
+        }
+
+        .dashboard-button:last-of-type {
+            border-radius: 0 4px 4px 0;
+            border-right: none;
+        }
+
+        .dashboard-button.active {
+            background: #666;
+            color: white;
+        }
+
+        .dashboard-button:hover {
+            background: #555;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: normal;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0;
+            justify-content: flex-start;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .zoom-label {
+            color: #888;
+            margin-right: 15px;
+            font-size: 14px;
+        }
+
+        .time-button {
+            background: #444;
+            color: #ccc;
+            border: none;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 0;
+            border-right: 1px solid #555;
+        }
+
+        .time-button:first-of-type {
+            border-radius: 4px 0 0 4px;
+        }
+
+        .time-button:last-of-type {
+            border-radius: 0 4px 4px 0;
+            border-right: none;
+        }
+
+        .time-button.active {
+            background: #666;
+            color: white;
+        }
+
+        .time-button:hover {
+            background: #555;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: #1e1e1e;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .chart-area {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .y-axis {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 60px;
+            height: 100%;
+            background: #2a2a2a;
+            border-right: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px 5px;
+        }
+
+        .y-label {
+            font-size: 11px;
+            color: #888;
+            text-align: right;
+            line-height: 1;
+        }
+
+        .x-axis {
+            position: absolute;
+            bottom: 0;
+            left: 60px;
+            right: 0;
+            height: 40px;
+            background: #2a2a2a;
+            border-top: 1px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+
+        .x-label {
+            font-size: 11px;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        .plot-area {
+            position: absolute;
+            left: 60px;
+            top: 0;
+            right: 0;
+            bottom: 40px;
+            background: #1e1e1e;
+        }
+
+        .overview-container {
+            height: 80px;
+            background: #1e1e1e;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .overview-chart {
+            position: absolute;
+            left: 60px;
+            top: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .selection-overlay {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background: rgba(100, 150, 200, 0.3);
+            border: 1px solid #6bb6ff;
+            pointer-events: none;
+        }
+
+        .date-labels {
+            position: absolute;
+            bottom: 0;
+            left: 60px;
+            right: 0;
+            height: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        .date-label {
+            font-size: 10px;
+            color: #666;
+            background: #333;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .stats {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .stats-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-decoration: underline;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            border: 1px solid #555;
+            display: none;
+        }
+
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 60px;
+            right: 0;
+            bottom: 40px;
+            pointer-events: none;
+        }
+
+        .grid-line {
+            stroke: #333;
+            stroke-width: 1;
+            opacity: 0.5;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-selector">
+            <button class="dashboard-button active" data-dashboard="speed">Solar Wind Speed</button>
+            <button class="dashboard-button" data-dashboard="density">Solar Wind Density</button>
+            <button class="dashboard-button" data-dashboard="temperature">Solar Wind Temperature</button>
+            <button class="dashboard-button" data-dashboard="mag">Magnetic Field Bz</button>
+
+            
+        </div>
+
+        <!-- Speed Dashboard -->
+        <div class="dashboard" id="speed-dashboard">
+            <div class="header">
+                <h1 class="title">Solar Wind Speed (km/s)</h1>
+                <div class="controls">
+                    <span class="zoom-label">Zoom</span>
+                    <button class="time-button" data-period="6h">6h</button>
+                    <button class="time-button" data-period="12h">12h</button>
+                    <button class="time-button active" data-period="24h">24h</button>
+                    <button class="time-button" data-period="3d">3d</button>
+                    <button class="time-button" data-period="7d">7d</button>
+                    <button class="time-button" data-period="all">All</button>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="y-axis" id="speed-yAxis"></div>
+                <div class="x-axis" id="speed-xAxis"></div>
+                <div class="plot-area">
+                    <svg width="100%" height="100%" id="speed-mainChart">
+                        <defs>
+                            <linearGradient id="speed-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#8B7355;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#3D3424;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="overview-container">
+                <div class="y-axis"></div>
+                <div class="overview-chart">
+                    <svg width="100%" height="100%" id="speed-overviewChart"></svg>
+                    <div class="selection-overlay" id="speed-selectionOverlay"></div>
+                </div>
+                <div class="date-labels" id="speed-dateLabels"></div>
+            </div>
+
+            <div class="stats">
+                <div class="stats-title">Last 7 Days Overview:</div>
+                <div id="speed-statsContent">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Density Dashboard -->
+        <div class="dashboard hidden" id="density-dashboard">
+            <div class="header">
+                <h1 class="title">Solar Wind Density (p/cm3)</h1>
+                <div class="controls">
+                    <span class="zoom-label">Zoom</span>
+                    <button class="time-button" data-period="6h">6h</button>
+                    <button class="time-button" data-period="12h">12h</button>
+                    <button class="time-button active" data-period="24h">24h</button>
+                    <button class="time-button" data-period="3d">3d</button>
+                    <button class="time-button" data-period="7d">7d</button>
+                    <button class="time-button" data-period="all">All</button>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="y-axis" id="density-yAxis"></div>
+                <div class="x-axis" id="density-xAxis"></div>
+                <div class="plot-area">
+                    <svg width="100%" height="100%" id="density-mainChart">
+                        <defs>
+                            <linearGradient id="density-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#2A5A8A;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="overview-container">
+                <div class="y-axis"></div>
+                <div class="overview-chart">
+                    <svg width="100%" height="100%" id="density-overviewChart"></svg>
+                    <div class="selection-overlay" id="density-selectionOverlay"></div>
+                </div>
+                <div class="date-labels" id="density-dateLabels"></div>
+            </div>
+
+            <div class="stats">
+                <div class="stats-title">Last 7 Days Overview:</div>
+                <div id="density-statsContent">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Temperature Dashboard -->
+        <div class="dashboard hidden" id="temperature-dashboard">
+            <div class="header">
+                <h1 class="title">Solar Wind Temperature (K)</h1>
+                <div class="controls">
+                    <span class="zoom-label">Zoom</span>
+                    <button class="time-button" data-period="6h">6h</button>
+                    <button class="time-button" data-period="12h">12h</button>
+                    <button class="time-button active" data-period="24h">24h</button>
+                    <button class="time-button" data-period="3d">3d</button>
+                    <button class="time-button" data-period="7d">7d</button>
+                    <button class="time-button" data-period="all">All</button>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="y-axis" id="temperature-yAxis"></div>
+                <div class="x-axis" id="temperature-xAxis"></div>
+                <div class="plot-area">
+                    <svg width="100%" height="100%" id="temperature-mainChart">
+                        <defs>
+                            <linearGradient id="temperature-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FF6B35;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#8B3A1A;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="overview-container">
+                <div class="y-axis"></div>
+                <div class="overview-chart">
+                    <svg width="100%" height="100%" id="temperature-overviewChart"></svg>
+                    <div class="selection-overlay" id="temperature-selectionOverlay"></div>
+                </div>
+                <div class="date-labels" id="temperature-dateLabels"></div>
+            </div>
+
+            <div class="stats">
+                <div class="stats-title">Last 7 Days Overview:</div>
+                <div id="temperature-statsContent">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Magnetic Field Dashboard -->
+        <div class="dashboard hidden" id="mag-dashboard">
+        <div class="header">
+            <h1 class="title">North/South Magnetic Field Component Bz (nT)</h1>
+            <div class="controls">
+            <span class="zoom-label">Zoom</span>
+            <button class="time-button" data-period="6h">6h</button>
+            <button class="time-button" data-period="12h">12h</button>
+            <button class="time-button active" data-period="24h">24h</button>
+            <button class="time-button" data-period="3d">3d</button>
+            <button class="time-button" data-period="7d">7d</button>
+            <button class="time-button" data-period="all">All</button>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="y-axis" id="mag-yAxis"></div>
+            <div class="x-axis" id="mag-xAxis"></div>
+            <div class="plot-area">
+            <svg width="100%" height="100%" id="mag-mainChart"></svg>
+            </div>
+        </div>
+
+        <div class="overview-container">
+            <div class="y-axis"></div>
+            <div class="overview-chart">
+            <svg width="100%" height="100%" id="mag-overviewChart"></svg>
+            <div class="selection-overlay" id="mag-selectionOverlay"></div>
+            </div>
+            <div class="date-labels" id="mag-dateLabels"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stats-title">Last 7 Days Overview:</div>
+            <div id="mag-statsContent">Loading...</div>
+        </div>
+        </div>
+
+
+        <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <script>
+        class SolarWindDashboard {
+  constructor() {
+    this.plasma = [];
+    this.mag = [];
+    this.currentDashboard = 'speed';
+    this.currentPeriod = '24h';
+    this.filteredData = [];
+    this.init();
+  }
+
+  async init() {
+    // Fetch plasma and magnetic data
+    await Promise.all([this.fetchPlasma(), this.fetchMag()]);
+    this.setupEventListeners();
+    this.switchDashboard('speed');
+  }
+
+  async fetchPlasma() {
+    const res = await fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json');
+    const raw = await res.json();
+    this.plasma = raw.slice(1).map(r => ({
+      time: new Date(r[0]),
+      density: +r[1] || 0,
+      speed: +r[2] || 0,
+      temperature: +r[3] || 0
+    }));
+  }
+
+  async fetchMag() {
+    const res = await fetch('https://services.swpc.noaa.gov/products/solar-wind/mag-7-day.json');
+    const raw = await res.json();
+    this.mag = raw.slice(1).map(r => ({
+      time: new Date(r[0]),
+      bz: +r[3] || 0
+    }));
+  }
+
+  setupEventListeners() {
+    // Tab buttons
+    document.querySelectorAll('.dashboard-button').forEach(btn => {
+      btn.addEventListener('click', () => this.switchDashboard(btn.dataset.dashboard));
+    });
+
+    // Period buttons for each dashboard
+    ['speed','density','temperature','mag'].forEach(type => {
+      const dash = document.getElementById(`${type}-dashboard`);
+      dash.querySelectorAll('.time-button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          dash.querySelector('.time-button.active').classList.remove('active');
+          btn.classList.add('active');
+          this.currentPeriod = btn.dataset.period;
+          this.render();
+        });
+      });
+    });
+
+    // Tooltip on plot areas
+    ['speed','density','temperature','mag'].forEach(type => {
+      const plot = document.querySelector(`#${type}-dashboard .plot-area`);
+      plot.addEventListener('mousemove', e => this.showTooltip(e, type));
+      plot.addEventListener('mouseleave', () => this.hideTooltip());
+    });
+  }
+
+  switchDashboard(type) {
+    // activate tab
+    document.querySelector('.dashboard-button.active').classList.remove('active');
+    document.querySelector(`.dashboard-button[data-dashboard="${type}"]`).classList.add('active');
+    // show dashboard
+    document.querySelector('.dashboard:not(.hidden)').classList.add('hidden');
+    document.getElementById(`${type}-dashboard`).classList.remove('hidden');
+    // reset period buttons
+    const dash = document.getElementById(`${type}-dashboard`);
+    dash.querySelector('.time-button.active').classList.remove('active');
+    dash.querySelector('[data-period="24h"]').classList.add('active');
+
+    this.currentDashboard = type;
+    this.currentPeriod = '24h';
+    this.render();
+  }
+
+  get data() {
+    return this.currentDashboard === 'mag' ? this.mag : this.plasma;
+  }
+
+  filterData() {
+    const now = Date.now();
+    let ms;
+    switch(this.currentPeriod) {
+      case '6h': ms = 6*3600e3; break;
+      case '12h': ms = 12*3600e3; break;
+      case '24h': ms = 24*3600e3; break;
+      case '3d': ms = 3*24*3600e3; break;
+      case '7d': ms = 7*24*3600e3; break;
+      default: ms = Infinity;
+    }
+    this.filteredData = ms === Infinity ? this.data : this.data.filter(d=> now - d.time.getTime() <= ms);
+  }
+
+  render() {
+    this.filterData();
+    this.renderMainChart();
+    this.renderOverviewChart();
+    this.renderAxes();
+    this.renderStats();
+    this.renderDateLabels();
+  }
+
+  renderMainChart() {
+    const svg = document.getElementById(`${this.currentDashboard}-mainChart`);
+    const {width,height} = svg.getBoundingClientRect();
+    if(!this.filteredData.length){ svg.innerHTML=''; return; }
+
+    // determine values and range
+    let vals = this.filteredData.map(d=> this.currentDashboard==='mag'? d.bz :
+      this.currentDashboard==='density'? d.density :
+      this.currentDashboard==='temperature'? d.temperature : d.speed);
+    let max = Math.max(...vals), min = Math.min(...vals);
+    let range = this.currentDashboard==='mag'? Math.ceil(Math.max(Math.abs(max),Math.abs(min))/5)*5 : max;
+
+    // build path
+    let points = this.filteredData.map((d,i)=>{
+      let x = i/(this.filteredData.length-1)*width;
+      let v = this.currentDashboard==='mag'? d.bz :
+              this.currentDashboard==='density'? d.density :
+              this.currentDashboard==='temperature'? d.temperature : d.speed;
+      let y = this.currentDashboard==='mag'
+        ? height - ((v+range)/(2*range))*height
+        : height - (v/range)*height;
+      return [x,y];
+    });
+
+    if(this.currentDashboard==='mag'){
+      const mid = height/2;
+      let pos=['M',0,mid], neg=['M',0,mid];
+      points.forEach(p=>{ pos.push('L',p[0],Math.min(p[1],mid)); neg.push('L',p[0],Math.max(p[1],mid)); });
+      pos.push('L',width,mid,'Z'); neg.push('L',width,mid,'Z');
+      svg.innerHTML = `<path d="${pos.join(' ')}" fill="#3D8EC9"/><path d="${neg.join(' ')}" fill="#C93D3D"/>`;
+    } else if(this.currentDashboard==='density'){
+      let dstr = points.map(p=>p.join(',')).join(' ');
+      svg.innerHTML = `<path d="M ${dstr}" fill="none" stroke="#4A90E2" stroke-width="1"/>`;
+    } else {
+      let dstr = points.map(p=>p.join(',')).join(' ');
+      let gid = `${this.currentDashboard}-gradient`;
+      let stops = this.currentDashboard==='speed'
+        ? '<stop offset="0%" style="stop-color:#8B7355"/><stop offset="100%" style="stop-color:#3D3424"/>'
+        : '<stop offset="0%" style="stop-color:#FF6B35"/><stop offset="100%" style="stop-color:#8B3A1A"/>';
+      svg.innerHTML = `<defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="0%" y2="100%">${stops}</linearGradient></defs><path d="M 0,${height} L ${dstr} L ${width},${height} Z" fill="url(#${gid})"/>`;
+    }
+  }
+
+  renderOverviewChart() {
+    // similar to main but using full dataset and grey fill, then overlay
+  }
+
+  renderAxes() {
+    const yax = document.getElementById(`${this.currentDashboard}-yAxis`);
+    if(!this.filteredData.length){ yax.innerHTML=''; return; }
+    let labels=[];
+    if(this.currentDashboard==='mag'){
+      let vs=this.filteredData.map(d=>d.bz);
+      let m=Math.max(...vs.map(v=>Math.abs(v)));
+      let yM=Math.ceil(m/5)*5;
+      for(let i=6;i>=0;i--) labels.push((-yM + 2*yM*i/6).toString());
+    } else {
+      let vs=this.filteredData.map(d=> this.currentDashboard==='density'? d.density : this.currentDashboard==='temperature'? d.temperature : d.speed);
+      let max=Math.max(...vs), steps=6;
+      for(let i=steps;i>=0;i--){
+        let v = this.currentDashboard==='density'
+          ? ((max*1.2)/steps*(i)).toFixed(1)
+          : Math.round((max/steps)*i);
+        labels.push(this.currentDashboard==='temperature' && v>=1000? (v/1000)+'k': v);
+      }
+    }
+    yax.innerHTML = labels.map(l=>`<div class="y-label">${l}</div>`).join('');
+    this.renderXAxis();
+  }
+
+  renderXAxis() {
+    const xax = document.getElementById(`${this.currentDashboard}-xAxis`);
+    if(!this.filteredData.length){ xax.innerHTML=''; return; }
+    let cnt= ['6h','12h'].includes(this.currentPeriod)?4: ['3d','7d','all'].includes(this.currentPeriod)?5:6;
+    const s=this.filteredData[0].time, e=this.filteredData.at(-1).time;
+    let labels=[];
+    for(let i=0;i<=cnt;i++){
+      let t=new Date(s.getTime() + (e-s)*i/cnt);
+      labels.push(['6h','12h','24h'].includes(this.currentPeriod)
+        ? t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false})
+        : t.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));
+    }
+    xax.innerHTML=labels.map(l=>`<div class="x-label">${l}</div>`).join('');
+  }
+
+  renderDateLabels() {
+    const dl = document.getElementById(`${this.currentDashboard}-dateLabels`);
+    let now=Date.now(), arr=[];
+    for(let i=6;i>=0;i--){ let d=new Date(now-86400e3*i); arr.push(`${d.getDate()} Jul`);}    
+    dl.innerHTML=arr.map(d=>`<div class="date-label">${d}</div>`).join('');
+  }
+
+  renderStats() {
+    const el=document.getElementById(`${this.currentDashboard}-statsContent`);
+    if(!this.data.length){ el.textContent='No data'; return;}    
+    let vs=this.data.map(d=> this.currentDashboard==='mag'? d.bz : this.currentDashboard==='density'? d.density : this.currentDashboard==='temperature'? d.temperature : d.speed);
+    let cur=vs.at(-1), mn=Math.min(...vs), mx=Math.max(...vs), avg=vs.reduce((a,b)=>a+b)/vs.length;
+    let unit=this.currentDashboard==='mag'? 'nT':this.currentDashboard==='density'?'p/cm³':this.currentDashboard==='speed'?'km/s':'K';
+    el.innerHTML=`Current: ${cur.toFixed(2)} ${unit} | Min: ${mn.toFixed(2)} ${unit} | Max: ${mx.toFixed(2)} ${unit} | Avg: ${avg.toFixed(2)} ${unit}`;
+  }
+
+  showTooltip(e,type) {
+    if(this.currentDashboard!==type) return;
+    const rect=e.currentTarget.getBoundingClientRect(), idx=Math.floor((e.clientX-rect.left)/rect.width*this.filteredData.length);
+    const pt=this.filteredData[idx]; if(!pt) return;
+    const tt=document.getElementById('tooltip'); tt.style.display='block'; tt.style.left=(e.clientX+10)+'px'; tt.style.top=(e.clientY-30)+'px';
+    const tstr=pt.time.toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    let val=this.currentDashboard==='mag'?`${pt.bz.toFixed(1)} nT`:
+            this.currentDashboard==='density'?`${pt.density.toFixed(2)} p/cm³`:
+            this.currentDashboard==='temperature'?`${pt.temperature.toFixed(0)} K`:`${pt.speed.toFixed(1)} km/s`;
+    tt.innerHTML=`<div>${tstr}</div><div>${this.currentDashboard.charAt(0).toUpperCase()+this.currentDashboard.slice(1)}: ${val}</div>`;
+  }
+
+  hideTooltip() { document.getElementById('tooltip').style.display='none'; }
+}
+
+// Initialize
+new SolarWindDashboard();
+
+    </script>
+</body>
+</html>
