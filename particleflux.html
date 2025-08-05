@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GOES-19 Electron Flux</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { 
+      background: #0a0a0a; 
+      color: #ffffff; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0; 
+      padding: 1.5rem; 
+      line-height: 1.4;
+    }
+    
+    h1 { 
+      text-align: center; 
+      margin-bottom: 1.5rem; 
+      font-weight: 300;
+      font-size: 1.8rem;
+      color: #e0e0e0;
+    }
+    
+    .chart-wrapper { 
+      background: #1a1a1a; 
+      padding: 1.5rem; 
+      border-radius: 8px; 
+      margin-bottom: 1rem;
+      border: 1px solid #333;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    
+    .controls { 
+      text-align: center; 
+      margin-bottom: 1.5rem; 
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .controls button {
+      padding: 0.6rem 1.2rem; 
+      background: #2a2a2a; 
+      border: 1px solid #444;
+      color: #ccc; 
+      cursor: pointer; 
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      min-width: 60px;
+    }
+    
+    .controls button:hover {
+      background: #3a3a3a;
+      border-color: #555;
+    }
+    
+    .controls button.active { 
+      background: #4a90e2; 
+      color: #fff; 
+      border-color: #4a90e2;
+      box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    #mainContainer { height: 450px; }
+    #miniContainer { height: 150px; }
+
+    .zoom-hint {
+      text-align: center;
+      color: #888;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    .tooltip {
+      position: absolute;
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+      border: 1px solid #444;
+    }
+
+    .loading {
+      text-align: center;
+      color: #888;
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Electron Flux | GOES 19 (Pfu)</h1>
+
+  <div class="controls">
+    <span style="color: #888; margin-right: 1rem; align-self: center;">Zoom</span>
+    <button data-period="6h">6h</button>
+    <button data-period="12h">12h</button>
+    <button data-period="24h">24h</button>
+    <button data-period="3d" class="active">3d</button>
+    <button data-period="7d">7d</button>
+    <button data-period="all">All</button>
+  </div>
+
+  <div id="mainContainer" class="chart-wrapper">
+    <canvas id="mainChart"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+  
+  <div id="miniContainer" class="chart-wrapper">
+    <canvas id="miniChart"></canvas>
+    <div class="zoom-hint">≥=2 MeV</div>
+  </div>
+
+  <div id="loading" class="loading" style="display: none;">Loading data...</div>
+
+  <script>
+  const ENDPOINT = 'https://services.swpc.noaa.gov/json/goes/primary/integral-electrons-7-day.json';
+  const THRESHOLD = 1000;
+  let rawData = [];
+  let currentPeriod = '3d';
+  let zoomStart = null;
+  let zoomEnd = null;
+
+  const PERIOD_MS = {
+    '6h': 6 * 3600000,
+    '12h': 12 * 3600000,
+    '24h': 24 * 3600000,
+    '3d': 3 * 24 * 3600000,
+    '7d': 7 * 24 * 3600000
+  };
+
+  // Utility functions
+  function log10(x) { return Math.log(x) / Math.LN10; }
+  
+  function formatTime(date) {
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    const day = date.getUTCDate();
+    const month = date.toLocaleDateString('en', {month: 'short', timeZone: 'UTC'});
+    return `${month} ${day}, ${hours}:${minutes}`;
+  }
+
+  function formatTimeForAxis(date, period) {
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    const day = date.getUTCDate();
+    const month = date.toLocaleDateString('en', {month: 'short', timeZone: 'UTC'});
+    
+    // For short periods, show time only
+    if (period === '6h' || period === '12h') {
+      return `${hours}:${minutes}`;
+    }
+    // For 24h, show time with date
+    else if (period === '24h') {
+      return `${month} ${day}\n${hours}:${minutes}`;
+    }
+    // For longer periods, show date
+    else {
+      return `${month} ${day}`;
+    }
+  }
+
+  function formatLogTick(value) {
+    if (value === 10) return '1e1';
+    if (value === 100) return '1e2';
+    if (value === 1000) return '1e3';
+    if (value === 10000) return '1e4';
+    if (value === 100000) return '1e5';
+    return '';
+  }
+
+  async function fetchData() {
+    try {
+      document.getElementById('loading').style.display = 'block';
+      const resp = await fetch(ENDPOINT);
+      const json = await resp.json();
+      
+      rawData = json
+        .map(d => ({
+          t: new Date(d.time_tag),
+          y: parseFloat(d.flux)
+        }))
+        .filter(d => d.y > 0 && !isNaN(d.y) && isFinite(d.y))
+        .sort((a, b) => a.t.getTime() - b.t.getTime());
+        
+      document.getElementById('loading').style.display = 'none';
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+      document.getElementById('loading').style.display = 'none';
+    }
+  }
+
+  function windowed(data, period) {
+    if (period === 'all') return data;
+    const cutoff = Date.now() - PERIOD_MS[period];
+    return data.filter(d => d.t.getTime() >= cutoff);
+  }
+
+  class SimpleChart {
+    constructor(canvasId, options = {}) {
+      this.canvas = document.getElementById(canvasId);
+      this.ctx = this.canvas.getContext('2d');
+      this.data = [];
+      this.currentPeriod = '3d';
+      this.options = {
+        padding: { top: 20, right: 60, bottom: 60, left: 80 },
+        logScale: true,
+        minY: options.minY || 10,
+        maxY: options.maxY || 100000,
+        showThreshold: options.showThreshold !== false,
+        showTooltip: options.showTooltip !== false,
+        fillArea: options.fillArea || false,
+        ...options
+      };
+      this.zoomRange = null;
+      
+      this.setupCanvas();
+      if (this.options.showTooltip) {
+        this.setupTooltip();
+      }
+      if (options.enableZoom) {
+        this.setupZoom();
+      }
+    }
+
+    setupCanvas() {
+      const rect = this.canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      this.canvas.width = rect.width * dpr;
+      this.canvas.height = rect.height * dpr;
+      this.ctx.scale(dpr, dpr);
+      this.canvas.style.width = rect.width + 'px';
+      this.canvas.style.height = rect.height + 'px';
+    }
+
+    setupTooltip() {
+      this.tooltip = document.getElementById('tooltip');
+      this.canvas.addEventListener('mousemove', (e) => this.showTooltip(e));
+      this.canvas.addEventListener('mouseleave', () => this.hideTooltip());
+    }
+
+    setupZoom() {
+      let isDragging = false;
+      let startX = 0;
+      
+      this.canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.offsetX;
+      });
+
+      this.canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          this.drawZoomSelection(startX, e.offsetX);
+        }
+      });
+
+      this.canvas.addEventListener('mouseup', (e) => {
+        if (isDragging) {
+          isDragging = false;
+          const endX = e.offsetX;
+          if (Math.abs(endX - startX) > 10) {
+            this.handleZoom(Math.min(startX, endX), Math.max(startX, endX));
+          }
+          this.draw();
+        }
+      });
+    }
+
+    drawZoomSelection(startX, endX) {
+      this.draw();
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      this.ctx.fillRect(Math.min(startX, endX), this.options.padding.top, 
+                       Math.abs(endX - startX), this.canvas.height / (window.devicePixelRatio || 1) - this.options.padding.top - this.options.padding.bottom);
+    }
+
+    handleZoom(startX, endX) {
+      if (!this.data.length) return;
+      
+      const rect = this.canvas.getBoundingClientRect();
+      const chartWidth = rect.width - this.options.padding.left - this.options.padding.right;
+      
+      const startRatio = (startX - this.options.padding.left) / chartWidth;
+      const endRatio = (endX - this.options.padding.left) / chartWidth;
+      
+      const timeRange = this.data[this.data.length - 1].t.getTime() - this.data[0].t.getTime();
+      const startTime = this.data[0].t.getTime() + (startRatio * timeRange);
+      const endTime = this.data[0].t.getTime() + (endRatio * timeRange);
+      
+      if (this.options.onZoom) {
+        this.options.onZoom(new Date(startTime), new Date(endTime));
+      }
+    }
+
+    showTooltip(e) {
+      if (!this.data.length) return;
+      
+      const rect = this.canvas.getBoundingClientRect();
+      const x = e.offsetX - this.options.padding.left;
+      const chartWidth = rect.width - this.options.padding.left - this.options.padding.right;
+      
+      if (x < 0 || x > chartWidth) return;
+      
+      const ratio = x / chartWidth;
+      const timeRange = this.data[this.data.length - 1].t.getTime() - this.data[0].t.getTime();
+      const targetTime = this.data[0].t.getTime() + (ratio * timeRange);
+      
+      // Find closest data point
+      let closest = this.data[0];
+      let minDiff = Math.abs(closest.t.getTime() - targetTime);
+      
+      for (let point of this.data) {
+        const diff = Math.abs(point.t.getTime() - targetTime);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = point;
+        }
+      }
+      
+      this.tooltip.innerHTML = `
+        <div>${formatTime(closest.t)}</div>
+        <div>Flux: ${closest.y.toFixed(2)}</div>
+      `;
+      this.tooltip.style.left = (e.pageX + 10) + 'px';
+      this.tooltip.style.top = (e.pageY - 10) + 'px';
+      this.tooltip.style.display = 'block';
+    }
+
+    hideTooltip() {
+      if (this.tooltip) {
+        this.tooltip.style.display = 'none';
+      }
+    }
+
+    setData(data, period = '3d') {
+      this.data = data;
+      this.currentPeriod = period;
+      this.draw();
+    }
+
+    setZoom(startTime, endTime) {
+      this.zoomRange = { start: startTime, end: endTime };
+      this.draw();
+    }
+
+    clearZoom() {
+      this.zoomRange = null;
+      this.draw();
+    }
+
+    draw() {
+      if (!this.data.length) return;
+      
+      const rect = this.canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      
+      // Clear canvas
+      this.ctx.clearRect(0, 0, width, height);
+      
+      // Filter data for zoom
+      let displayData = this.data;
+      if (this.zoomRange) {
+        displayData = this.data.filter(d => 
+          d.t >= this.zoomRange.start && d.t <= this.zoomRange.end
+        );
+      }
+      
+      if (!displayData.length) return;
+      
+      const chartWidth = width - this.options.padding.left - this.options.padding.right;
+      const chartHeight = height - this.options.padding.top - this.options.padding.bottom;
+      
+      const timeMin = displayData[0].t.getTime();
+      const timeMax = displayData[displayData.length - 1].t.getTime();
+      const timeRange = timeMax - timeMin;
+      
+      // Draw grid and axes
+      this.drawGrid(chartWidth, chartHeight);
+      this.drawAxes(displayData, chartWidth, chartHeight);
+      
+      // Draw threshold line
+      if (this.options.showThreshold) {
+        this.drawThreshold(chartWidth, chartHeight);
+      }
+      
+      // Draw data line
+      this.drawDataLine(displayData, chartWidth, chartHeight, timeMin, timeRange);
+    }
+
+    drawGrid(chartWidth, chartHeight) {
+      this.ctx.strokeStyle = '#333';
+      this.ctx.lineWidth = 0.5;
+      
+      // Vertical grid lines
+      for (let i = 0; i <= 10; i++) {
+        const x = this.options.padding.left + (i * chartWidth / 10);
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, this.options.padding.top);
+        this.ctx.lineTo(x, this.options.padding.top + chartHeight);
+        this.ctx.stroke();
+      }
+      
+      // Horizontal grid lines (log scale)
+      const logMin = log10(this.options.minY);
+      const logMax = log10(this.options.maxY);
+      const logRange = logMax - logMin;
+      
+      [10, 100, 1000, 10000, 100000].forEach(value => {
+        if (value >= this.options.minY && value <= this.options.maxY) {
+          const logY = log10(value);
+          const y = this.options.padding.top + chartHeight - ((logY - logMin) / logRange) * chartHeight;
+          this.ctx.beginPath();
+          this.ctx.moveTo(this.options.padding.left, y);
+          this.ctx.lineTo(this.options.padding.left + chartWidth, y);
+          this.ctx.stroke();
+        }
+      });
+    }
+
+    drawAxes(displayData, chartWidth, chartHeight) {
+      this.ctx.fillStyle = '#888';
+      this.ctx.font = '11px Segoe UI';
+      this.ctx.textAlign = 'center';
+      
+      // X-axis labels (time) - adjusted for different periods
+      const timeMin = displayData[0].t.getTime();
+      const timeMax = displayData[displayData.length - 1].t.getTime();
+      const timeRange = timeMax - timeMin;
+      
+      // Determine number of labels based on period
+      let numLabels = 5;
+      if (this.currentPeriod === '6h') numLabels = 6;
+      else if (this.currentPeriod === '12h') numLabels = 6;
+      else if (this.currentPeriod === '24h') numLabels = 8;
+      else if (this.currentPeriod === '3d') numLabels = 6;
+      else if (this.currentPeriod === '7d') numLabels = 7;
+      
+      for (let i = 0; i <= numLabels; i++) {
+        const x = this.options.padding.left + (i * chartWidth / numLabels);
+        const time = new Date(timeMin + (i * timeRange / numLabels));
+        const label = formatTimeForAxis(time, this.currentPeriod);
+        
+        // Handle multi-line labels for 24h period
+        if (label.includes('\n')) {
+          const lines = label.split('\n');
+          this.ctx.fillText(lines[0], x, this.options.padding.top + chartHeight + 15);
+          this.ctx.fillText(lines[1], x, this.options.padding.top + chartHeight + 30);
+        } else {
+          this.ctx.fillText(label, x, this.options.padding.top + chartHeight + 20);
+        }
+      }
+      
+      // Y-axis labels (log scale)
+      this.ctx.textAlign = 'right';
+      [10, 100, 1000, 10000, 100000].forEach(value => {
+        if (value >= this.options.minY && value <= this.options.maxY) {
+          const logMin = log10(this.options.minY);
+          const logMax = log10(this.options.maxY);
+          const logRange = logMax - logMin;
+          const logY = log10(value);
+          const y = this.options.padding.top + chartHeight - ((logY - logMin) / logRange) * chartHeight;
+          this.ctx.fillText(formatLogTick(value), this.options.padding.left - 10, y + 4);
+        }
+      });
+    }
+
+    drawThreshold(chartWidth, chartHeight) {
+      const logMin = log10(this.options.minY);
+      const logMax = log10(this.options.maxY);
+      const logRange = logMax - logMin;
+      const logThreshold = log10(THRESHOLD);
+      const y = this.options.padding.top + chartHeight - ((logThreshold - logMin) / logRange) * chartHeight;
+      
+      this.ctx.strokeStyle = '#e74c3c';
+      this.ctx.lineWidth = 2;
+      this.ctx.setLineDash([8, 4]);
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.options.padding.left, y);
+      this.ctx.lineTo(this.options.padding.left + chartWidth, y);
+      this.ctx.stroke();
+      this.ctx.setLineDash([]);
+      
+      // Threshold label
+      this.ctx.fillStyle = '#e74c3c';
+      this.ctx.font = '12px Segoe UI';
+      this.ctx.textAlign = 'left';
+      this.ctx.fillText('Threshold', this.options.padding.left + 10, y - 5);
+    }
+
+    drawDataLine(displayData, chartWidth, chartHeight, timeMin, timeRange) {
+      const logMin = log10(this.options.minY);
+      const logMax = log10(this.options.maxY);
+      const logRange = logMax - logMin;
+      
+      this.ctx.strokeStyle = '#6b9bd2';
+      this.ctx.lineWidth = 1.5;
+      
+      if (this.options.fillArea) {
+        this.ctx.fillStyle = 'rgba(107, 155, 210, 0.3)';
+        this.ctx.beginPath();
+        displayData.forEach((point, i) => {
+          const x = this.options.padding.left + ((point.t.getTime() - timeMin) / timeRange) * chartWidth;
+          const logY = log10(Math.max(point.y, this.options.minY));
+          const y = this.options.padding.top + chartHeight - ((logY - logMin) / logRange) * chartHeight;
+          
+          if (i === 0) {
+            this.ctx.moveTo(x, this.options.padding.top + chartHeight);
+            this.ctx.lineTo(x, y);
+          } else {
+            this.ctx.lineTo(x, y);
+          }
+        });
+        this.ctx.lineTo(this.options.padding.left + chartWidth, this.options.padding.top + chartHeight);
+        this.ctx.closePath();
+        this.ctx.fill();
+      }
+      
+      // Draw line
+      this.ctx.beginPath();
+      displayData.forEach((point, i) => {
+        const x = this.options.padding.left + ((point.t.getTime() - timeMin) / timeRange) * chartWidth;
+        const logY = log10(Math.max(point.y, this.options.minY));
+        const y = this.options.padding.top + chartHeight - ((logY - logMin) / logRange) * chartHeight;
+        
+        if (i === 0) {
+          this.ctx.moveTo(x, y);
+        } else {
+          this.ctx.lineTo(x, y);
+        }
+      });
+      this.ctx.stroke();
+    }
+  }
+
+  let mainChart, miniChart;
+
+  function initCharts() {
+    mainChart = new SimpleChart('mainChart', {
+      minY: 10,
+      maxY: 100000,
+      showTooltip: true
+    });
+
+    miniChart = new SimpleChart('miniChart', {
+      minY: 10,
+      maxY: 10000,
+      showTooltip: false,
+      fillArea: true,
+      enableZoom: true,
+      onZoom: (startTime, endTime) => {
+        mainChart.setZoom(startTime, endTime);
+      }
+    });
+  }
+
+  function updateCharts() {
+    const filteredData = windowed(rawData, currentPeriod);
+    mainChart.setData(filteredData, currentPeriod);
+    mainChart.clearZoom();
+    
+    miniChart.setData(rawData, 'all');
+  }
+
+  // Button event handlers
+  document.querySelectorAll('.controls button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('.controls button.active').classList.remove('active');
+      btn.classList.add('active');
+      currentPeriod = btn.dataset.period;
+      updateCharts();
+    });
+  });
+
+  // Initialize everything
+  document.addEventListener('DOMContentLoaded', async () => {
+    await fetchData();
+    initCharts();
+    updateCharts();
+    
+    // Auto-refresh every 5 minutes
+    setInterval(async () => {
+      await fetchData();
+      updateCharts();
+    }, 300000);
+  });
+
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    if (mainChart && miniChart) {
+      mainChart.setupCanvas();
+      miniChart.setupCanvas();
+      updateCharts();
+    }
+  });
+  </script>
+</body>
+</html>
