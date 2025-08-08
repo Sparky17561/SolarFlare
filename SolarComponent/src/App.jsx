@@ -3,6 +3,9 @@ import TimeCarousel, { KpDataProvider } from './components/TimeCarousel';
 import GeomagneticIndex from './components/GeomagneticIndex';
 import SolarWindDashboard from './components/SolarWindDashboard';
 import './App.css';
+import ElectronFlux from './components/ElectronFlux';
+import ProtonFlux from './components/ProtonFlux';
+import XrayFlux from './components/XrayFlux';
 
 function App() {
   return (
@@ -16,6 +19,9 @@ function App() {
       </div>
     </KpDataProvider>
     <SolarWindDashboard/>
+    <ElectronFlux />
+    <ProtonFlux />
+    <XrayFlux />
     </>
     
     
