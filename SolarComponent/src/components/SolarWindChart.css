@@ -1,0 +1,404 @@
+/* Enhanced Solar Wind Chart Styles */
+.solar-wind-chart {
+  background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(75, 85, 99, 0.2);
+  position: relative;
+  overflow: hidden;
+  min-height:950px;
+}
+
+.solar-wind-chart::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.chart-title {
+  color: #F3F4F6;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.chart-icon {
+  font-size: 28px;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
+}
+
+.period-indicator {
+  font-size: 16px;
+  font-weight: 400;
+  color: #9CA3AF;
+  margin-left: 8px;
+}
+
+.chart-loading {
+  display: flex;
+  align-items: center;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(59, 130, 246, 0.2);
+  border-top: 3px solid #3B82F6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.chart-container {
+  position: relative;
+  height: 400px;
+  background: rgba(17, 24, 39, 0.5);
+  border-radius: 12px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(75, 85, 99, 0.1);
+}
+
+.chart-container canvas {
+  cursor: crosshair;
+  transition: all 0.2s ease;
+}
+
+.chart-container:hover canvas {
+  filter: brightness(1.05);
+}
+
+.chart-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+  padding: 20px;
+  background: rgba(31, 41, 55, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(75, 85, 99, 0.2);
+  backdrop-filter: blur(5px);
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(55, 65, 81, 0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(75, 85, 99, 0.2);
+  transition: all 0.3s ease;
+}
+
+.stat-item.time-range {
+  grid-column: 1 / -1;
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.time-range-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.to-separator {
+  font-size: 11px;
+  color: #9CA3AF;
+  font-style: italic;
+}
+
+.stat-item:hover {
+  background: rgba(55, 65, 81, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.stat-label {
+  color: #9CA3AF;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.stat-value {
+  color: #F3F4F6;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: right;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: #6B7280;
+}
+
+.no-data-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.no-data-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #9CA3AF;
+  margin-bottom: 8px;
+}
+
+.no-data-subtext {
+  font-size: 14px;
+  color: #6B7280;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+/* Time Controls Enhancement */
+.time-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #374151 0%, #1F2937 100%);
+  padding: 20px 24px;
+  border-radius: 12px;
+  margin: 20px 0;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.period-selector {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.control-label {
+  color: #F3F4F6;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.period-buttons {
+  display: flex;
+  gap: 4px;
+  background: rgba(17, 24, 39, 0.5);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(75, 85, 99, 0.2);
+}
+
+.period-button {
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #9CA3AF;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.period-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.period-button:hover::before {
+  left: 100%;
+}
+
+.period-button:hover {
+  color: #F3F4F6;
+  background: rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
+}
+
+.period-button.active {
+  background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+  color: white;
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+.period-button.active:hover {
+  background: linear-gradient(135deg, #2563EB, #1E40AF);
+}
+
+.period-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.refresh-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #10B981, #047857);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.refresh-button:hover {
+  background: linear-gradient(135deg, #059669, #065F46);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
+}
+
+.refresh-button:active {
+  transform: translateY(0);
+}
+
+.refresh-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.refresh-button.loading .refresh-icon {
+  animation: spin 1s linear infinite;
+}
+
+.refresh-icon {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+}
+
+.refresh-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.refresh-text {
+  font-size: 14px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .solar-wind-chart {
+    padding: 16px;
+    margin: 16px 0;
+  }
+  
+  .chart-title {
+    font-size: 20px;
+  }
+  
+  .chart-container {
+    height: 300px;
+    padding: 16px;
+  }
+  
+  .chart-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .time-controls {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  .period-selector {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  
+  .period-buttons {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .period-button {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
+
+.stat-note {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.stat-note small {
+  color: #9CA3AF;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Enhanced chart container for better mobile support */
+@media (max-width: 640px) {
+  .chart-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .stat-value {
+    font-size: 14px;
+  }
+  
+  .time-range-value {
+    align-items: flex-start;
+    font-size: 12px;
+  }
+}

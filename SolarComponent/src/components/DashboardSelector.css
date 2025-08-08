@@ -1,0 +1,101 @@
+.dashboard-selector {
+  display: flex;
+  gap: 0;
+  justify-content: center;
+  margin: 30px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(145deg, #2a2a2a, #1e1e1e);
+}
+
+.dashboard-button {
+  background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
+  color: #ccc;
+  border: none;
+  padding: 16px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 0;
+  border-right: 1px solid #444;
+  transition: all 0.3s ease;
+  position: relative;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.dashboard-button:first-of-type {
+  border-radius: 12px 0 0 12px;
+}
+
+.dashboard-button:last-of-type {
+  border-radius: 0 12px 12px 0;
+  border-right: none;
+}
+
+.dashboard-button.active {
+  background: linear-gradient(145deg, #4a90e2, #3a7bc8);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(74, 144, 226, 0.3);
+}
+
+.dashboard-button:hover:not(.active) {
+  background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.dashboard-button:active {
+  transform: translateY(0);
+}
+
+.dashboard-icon {
+  font-size: 20px;
+  filter: grayscale(0.3);
+  transition: filter 0.3s ease;
+}
+
+.dashboard-button.active .dashboard-icon {
+  filter: grayscale(0);
+  animation: pulse 2s infinite;
+}
+
+.dashboard-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .dashboard-selector {
+    flex-wrap: wrap;
+    gap: 8px;
+    border-radius: 8px;
+  }
+  
+  .dashboard-button {
+    flex: 1;
+    min-width: calc(50% - 4px);
+    border-radius: 8px !important;
+    border-right: none;
+    margin-bottom: 0;
+  }
+  
+  .dashboard-button:first-of-type,
+  .dashboard-button:last-of-type {
+    border-radius: 8px !important;
+  }
+}
