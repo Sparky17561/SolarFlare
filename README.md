@@ -4,4 +4,6 @@ here ones with integral and xray links solves the Particle flux and NOAA scales 
 
 DST index needs webscraping
 
-havent figured out about ionosphere
+havent figured out about ionosphere,
+
+find a good dashboard design implement rest of the features
