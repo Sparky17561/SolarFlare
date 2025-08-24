@@ -1,0 +1,377 @@
+/* Hero Section (keeps your original look; gradients to the left preserved) */
+.hero {
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8faff 0%, #e6f3ff 50%, #dbeafe 100%);
+}
+
+/* background decorative elements */
+.hero-background {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.floating-element {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.3;
+  transform: translateZ(0);
+}
+
+.floating-element-1 {
+  width: 300px;
+  height: 300px;
+  background: linear-gradient(135deg, #3b82f6, #1e40af);
+  top: 12%;
+  left: 8%;
+  animation: pulse 4s ease-in-out infinite;
+}
+
+.floating-element-2 {
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  bottom: 10%;
+  right: 6%;
+  animation: pulse 6s ease-in-out infinite reverse;
+}
+
+.glass-orb {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.06);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(59, 130, 246, 0.12);
+}
+
+.glass-orb-1 {
+  width: 100px;
+  height: 100px;
+  top: 8%;
+  right: 28%;
+  animation: float 8s ease-in-out infinite;
+}
+
+.glass-orb-2 {
+  width: 150px;
+  height: 150px;
+  bottom: 28%;
+  left: 6%;
+  animation: float 10s ease-in-out infinite reverse;
+}
+
+.glass-orb-3 {
+  width: 80px;
+  height: 80px;
+  top: 56%;
+  right: 8%;
+  animation: float 6s ease-in-out infinite;
+}
+
+/* layout container */
+.hero-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.hero-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3.5rem;
+  align-items: center;
+}
+
+/* hero text */
+.hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.hero-title {
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1.05;
+  color: #1e40af;
+  margin: 0;
+}
+
+.gradient-text {
+  display: inline-block;
+  background: linear-gradient(135deg, #3b82f6, #1e40af, #60a5fa, #3b82f6);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 24px rgba(59, 130, 246, 0.18);
+  transition: background-position 1s linear;
+  padding-left: 0.35rem;
+}
+
+.hero-subtitle {
+  font-size: 1.15rem;
+  color: #475569;
+  line-height: 1.75;
+  margin: 0;
+  max-width: 90%;
+}
+
+/* buttons */
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.95rem 1.75rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #1e40af);
+  color: white;
+  box-shadow: 0 8px 28px rgba(59, 130, 246, 0.18);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #1e40af;
+  border: 2px solid rgba(59, 130, 246, 0.14);
+}
+
+.btn-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* status items */
+.hero-status {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #475569;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.status-indicator {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-live {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.45);
+}
+
+.status-updates {
+  background: #3b82f6;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.45);
+}
+
+/* visual / Spline area */
+.hero-visual {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Spline Container */
+.spline-container {
+  width: 100%;
+  height: 520px;
+  position: relative;
+  overflow: visible;
+  border-radius: 12px;
+  background: transparent;
+}
+
+/* Make sure Spline canvas is visible & interactive */
+.spline-container > div,
+.spline-container > canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  position: relative !important;
+  z-index: 4;
+  pointer-events: auto;
+}
+
+/* ---------- NEW: Organic overlays to hide badge & blend ---------- */
+
+/* wide gradient that fades from white to transparent (softly hides right/bottom) */
+.spline-gradient-overlay {
+  position: absolute;
+  right: -8%;
+  bottom: -8%;
+  width: 70%;
+  height: 70%;
+  z-index: 9;
+  pointer-events: none;
+  /* elliptical soft shape using radial + linear for subtle texture */
+  background:
+    radial-gradient(60% 80% at 80% 80%, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 30%, rgba(255,255,255,0.7) 55%, rgba(255,255,255,0.2) 80%, rgba(255,255,255,0) 100%),
+    linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 65%, rgba(255,255,255,1) 100%);
+  border-radius: 40% 60% 40% 60% / 50% 40% 60% 50%;
+  filter: blur(10px);
+  transform: translate(0, 0);
+  mix-blend-mode: normal;
+}
+
+/* smaller organic mask with blur to directly cover the badge area */
+.spline-badge-mask {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  width: 220px;     /* adjust if badge sits outside these bounds */
+  height: 58px;
+  z-index: 10;
+  pointer-events: none;
+  background: rgba(255,255,255,0.98);
+  border-radius: 40px;
+  box-shadow: 0 10px 24px rgba(20,30,60,0.08);
+  filter: blur(6px); /* softens the edges so it blends */
+  transform: rotate(-6deg);
+  /* subtle gradient highlight to integrate with hero */
+  background-image: linear-gradient(180deg, rgba(255,255,255,1), rgba(248,250,255,0.92));
+}
+
+/* Optional decorative corner overlays (subtle, keep below masks) */
+.spline-corner-overlay {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  pointer-events: none;
+  z-index: 7;
+}
+
+.corner-top-left {
+  top: 4px;
+  left: 4px;
+  background: radial-gradient(circle at top left, rgba(248, 250, 255, 0.9) 0%, transparent 70%);
+}
+
+.corner-bottom-right {
+  bottom: 8px;
+  right: 8px;
+  background: radial-gradient(circle at bottom right, rgba(224, 236, 255, 0.9) 0%, transparent 60%);
+}
+
+/* animations & responsive helpers */
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.06); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-18px); }
+}
+
+/* responsive */
+@media (max-width: 1024px) {
+  .hero-content {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    text-align: center;
+  }
+
+  .hero-title {
+    font-size: 3rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.05rem;
+    max-width: 100%;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
+
+  .hero-status {
+    justify-content: center;
+  }
+
+  .spline-container {
+    height: 420px;
+  }
+
+  /* nudge mask & overlay for narrower screens */
+  .spline-badge-mask {
+    right: 12px;
+    bottom: 12px;
+    width: 180px;
+    height: 48px;
+  }
+  .spline-gradient-overlay { width: 85%; height: 65%; right: -6%; bottom: -6%; filter: blur(12px); }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 2.5rem 0;
+  }
+
+  .hero-container {
+    padding: 0 1rem;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .spline-container {
+    height: 300px;
+  }
+
+  .floating-element-1,
+  .floating-element-2 {
+    width: 160px;
+    height: 160px;
+  }
+
+  .spline-badge-mask {
+    right: 10px;
+    bottom: 10px;
+    width: 140px;
+    height: 40px;
+    transform: rotate(-4deg);
+    filter: blur(5px);
+  }
+  .spline-gradient-overlay { width: 95%; height: 50%; right: -2%; bottom: -6%; }
+}
